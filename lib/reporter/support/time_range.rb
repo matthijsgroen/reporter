@@ -7,7 +7,7 @@ module Reporter::Support::TimeRange
 		true
 	end
 
-	def humanize
+	def human_name
 		return inspect unless time_range?
 		b = test_begin_ends(self.begin)
 		e = test_begin_ends(self.end)
@@ -22,7 +22,7 @@ module Reporter::Support::TimeRange
 					return I18n.t("time_range.quarter", :year => self.begin.year, :quarter => bq, :default => "q%{quarter} %{year}")
 				else
 					return I18n.t("time_range.multi_quarter", :year => self.begin.year,
-												:begin_quarter => bq, :end_quarter => bq, :default => "q%{begin_quarter} .. q%{end_quarter} %{year}")
+												:begin_quarter => bq, :end_quarter => eq, :default => "q%{begin_quarter} .. q%{end_quarter} %{year}")
 				end
 			elsif b[:bm] and e[:em]
 				if self.begin.month == self.end.month

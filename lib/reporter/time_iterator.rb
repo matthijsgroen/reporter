@@ -13,6 +13,7 @@ module Reporter::TimeIterator
 		end
 		date_tree = build_date_tree steps
 		iterate_date_tree scope, date_tree, scope.limit, &block
+		scope.change nil
 	end
 
 	private
@@ -46,7 +47,7 @@ module Reporter::TimeIterator
 	def iterate_date_tree scope, tree, time_frame, &block
 		iterate_time_periods time_frame, tree[:name] do |new_time_frame|
 			iterate_date_tree scope, tree[:children], time_frame, &block if tree[:children_first] and tree[:children]
-			scope.set_period new_time_frame
+			scope.change new_time_frame
 			yield
 			iterate_date_tree scope, tree[:children], time_frame, &block if !tree[:children_first] and tree[:children]
 		end

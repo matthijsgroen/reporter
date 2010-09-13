@@ -8,6 +8,7 @@ class Reporter::DataSource::ActiveRecordSource
 
 	attr_reader :active_record, :name
 
+	# scope detection methods
 	def references
 		load_columns if @references.nil?
 		@references
@@ -18,6 +19,12 @@ class Reporter::DataSource::ActiveRecordSource
 		@date_columns
 	end
 
+	def relations_to_objects
+		load_columns if @object_links.nil?
+		@object_links
+	end
+
+	# display and inspection
 	def inspect
 		@active_record.inspect
 	end
@@ -53,6 +60,7 @@ class Reporter::DataSource::ActiveRecordSource
 	def load_columns
 		@references = []
 		@date_columns = []
+		@object_links = {}
 		active_record.columns.collect do |column|
 			if column.name =~ /^(.*)_id$/ and column.klass == Fixnum
 				@references << $1
@@ -61,6 +69,10 @@ class Reporter::DataSource::ActiveRecordSource
 			end
 		end.compact
 
+		active_record.reflect_on_all_associations.each do |reflection|
+			@object_links[reflection.klass] ||= []
+			@object_links[reflection.klass] << reflection.name.to_s
+		end
 	end
 
 end

@@ -1,6 +1,7 @@
 class Reporter::Scope::Base
 
-	def initialize scoping, name, mappings
+	def initialize scoping, name, data_source, mappings
+		@data_source = data_source
 		@scoping = scoping
 		@name = name
 		@mappings = scoping.normalize_mapping mappings
@@ -8,6 +9,10 @@ class Reporter::Scope::Base
 	end
 
 	def limit= *args
+		raise NotImplementedError
+	end
+
+	def change value
 		raise NotImplementedError
 	end
 
@@ -27,6 +32,6 @@ class Reporter::Scope::Base
 
 	protected
 
-	attr_reader :scoping
+	attr_reader :scoping, :data_source
 
 end
