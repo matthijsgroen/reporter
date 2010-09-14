@@ -160,15 +160,21 @@ At last default limits are set for the scopes. This can be overridden (temporari
 	
 	@market_share = market_share # expose report for view
 
+The value passed is interpreted by their respective scope, so 2010 as value for the DateScope will be translated to Date.civil(2010).beginning_of_year .. Date.civil(2010).end_of_year
+The same is for ReferenceScope. An object (or list of them) passed that are not matches for the required object (Area in this case) will be investigated for a link.
+In this case, a Company has_many :areas. All the areas of the company will be used as scope.
+
 
 In detail: Building the view
 ============================
-
 
 	%h1 
 		Marketshare report for
 		= @market_share_report.scope_name :area
 		= @market_share_report.scope_name :time
+
+Scope name will print a human readable name for the currently active scope. In this case, :area will print the company name, and :time will print "2010"
+
 	%table.report
 		%thead
 			%th Month
@@ -179,7 +185,33 @@ In detail: Building the view
 			%th National marktetshare
 		%tbody
 			- @market_share_report.iterate_time :time, :month, :quarter, :year do
+
+Iteration
+---------
+Report supports 2 different iterators (for now). A normal iterator that loops through a set of objects (eg. a list of Areas or Companies could be used) or the
+time iterator. The time iterator must be provided with the name of the DateScope, and additional arguments for the chunks of time to iterate.
+:month will iterate the limit period in chunks of 1 month, :quarter in chunks of 3 months, :year in chunks of a year.
+
+The order of the supplied parameters is important. if you supply: :month, :quarter, :year for the first half of 2010, the periods will be as follows:
+	Jan 10, Feb 10, Mar 10, Q1 10, Apr 10, May 10, Jun 10, Q2 10, 2010
+	
+If you supply these parameters in the order of :year, :month, :quarter, the periods will be as followed:
+	2010, Jan 10, Feb 10, Mar 10, Q1 10, Apr 10, May 10, Jun 10, Q2 10
+
+If you pass :year, :quarter, :month, the quarters will be placed before their containing months.
+
+not all combinations are valid however. The arguments are parsed into a tree form, described as follows:
+:total => 6, :year => 5, :quarter => 4, :month => 3, :week => 2, :day => 1
+
+the outsides of the series must always have the biggest value of the set.
+valid: [:year(5), :month(3), :quarter(4)] == :year(pre) => :quarter(post) => :month(nil)
+valid: [:year(5), :month(3), :week(2), :quarter(4)] == :year(pre) => :quarter(post) => :month(pre) => :week(nil)
+invalid: [:year(5), :month(3), :quarter(4), :week(2)] The childs of year (biggest in initial set) are: [:month(3), :quarter(4), :week(2)] The larges value is not the first or last item, so this set is invalid.
+
 				- row = @market_share_report.get_row
+
+get_row retrieves a value container from the report, storing the active scopes. the current scopes are just applied right before data retrieval, if there is no cache available.
+
 				%tr
 					%td= row[:period] # The query will fire at this point. so caching makes huge profit!
 					%td= row[:funerals]
@@ -187,4 +219,6 @@ In detail: Building the view
 					%td= row[:workarea_marketshare].as_percentage
 					%td= row[:deaths_national]
 					%td= row[:national_marketshare].as_percentage
+
+the [] method in the row will execute the scopes and ask the field to calculate the value. the value is cached so multiple uses of the same value will not decrease performance (since field values can also be accessed by formulas). The Result is an ReportValue object that support several formatting options and meta data.
 
