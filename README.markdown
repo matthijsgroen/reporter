@@ -222,3 +222,95 @@ get_row retrieves a value container from the report, storing the active scopes. 
 
 the [] method in the row will execute the scopes and ask the field to calculate the value. the value is cached so multiple uses of the same value will not decrease performance (since field values can also be accessed by formulas). The Result is an ReportValue object that support several formatting options and meta data.
 
+Advanced example
+================
+I will not cover this in detail, but here a far more complex example of a employee capacity report:
+
+	def capacity_report
+		# 1. Build the dataset
+		capacity_report = Reporter::DataSet.new do |r|
+			r.data_source = Reporter::DataSource.new do |data_set|
+				# 1a. Add the sources to extract data from
+				data_set << Funeral << Employee << TimeRegistration
+				Rails.logger.info data_set.scopes.possible.inspect
+				# 1b. Link the sources together on common properties
+				data_set.scopes.add_date_scope :time, :funeral => "notification", :time_registration => "date"
+				data_set.scopes.add_reference_scope :company, Company
+			end
+
+			# 1c. Add the fields / values / calculations to extract from the datasources
+			r.data_structure do |row|
+				row.add_field :period, :time
+				row.add_count_field :funerals, :funerals
+				row.add_formula_field :funeral_hours, "2080 / 108"
+				row.add_formula_field :funeral_time, "funerals * funeral_hours"
+
+				row.add_field :fte do |data_source, options, result_row|
+					active_period = data_source.scopes.get(:time).active_period
+					conditions = ["(funeral_organizer = ? OR funeral_caretaker = ?) AND parttime = ? AND internal = ? AND start_date <= ? AND (end_date >= ? OR end_date IS NULL)",
+						true, true, false, true, active_period.end, active_period.begin]
+
+					db_start = active_period.begin.to_s(:db)
+					db_end = active_period.end.to_s(:db)
+					source = data_source.get(:employees)
+					value = source.sum "datediff(least(ifnull(end_date, '#{db_end}'), '#{db_end}'), " +
+						"greatest(ifnull(start_date, '#{db_start}'), '#{db_start}')) + 1", :ignore_scope => :time,
+														 :conditions => conditions
+					result_row.value = value.to_f
+				end
+				row.add_formula_field :internal_hours, "fte * (40 / 7.0)"
+				row.add_sum_field :external_hours, :time_registrations, :hours
+				row.add_formula_field :total_hours, "internal_hours + external_hours"
+				row.add_formula_field :capacity, "funeral_time / total_hours"
+			end
+		end
+
+		# 2. set master scopes
+		capacity_report.data_source.scopes.limit_scope :time, 2010
+		capacity_report.data_source.scopes.limit_scope :company, Company.all
+
+		@capacity_report = capacity_report
+	end
+
+
+The view, that also changes the scopes during iteration:
+
+  %h1
+    Capaciteits rapport
+    = @capacity_report.scope_name :time
+  %table.report
+    %thead
+      %th Maand
+      %th Uv
+      %th Uren
+      %th Werkelijk
+      %th Intern
+      %th Extern
+      %th %
+
+      %th Cum. Uv
+      %th Cum. Uren
+      %th Cum. Werkelijk
+      %th Cum. Intern
+      %th Cum. Extern
+      %th %
+    %tbody
+      - @capacity_report.iterate_time :time, :month do
+        - row = @capacity_report.get_row
+        %tr
+          %td= row[:period]
+          %td= row[:funerals]
+          %td= row[:funeral_time].round 2
+          %td= row[:total_hours].round 2
+          %td= row[:internal_hours].round 2
+          %td= row[:external_hours].round 2
+          %td= row[:capacity].as_percentage
+
+          - cum_row = @capacity_report.get_row :time => :year_cumulative
+          %td= cum_row[:funerals]
+          %td= cum_row[:funeral_time].round 2
+          %td= cum_row[:total_hours].round 2
+          %td= cum_row[:internal_hours].round 2
+          %td= cum_row[:external_hours].round 2
+          %td= cum_row[:capacity].as_percentage
+
