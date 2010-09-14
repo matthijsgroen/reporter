@@ -275,42 +275,42 @@ I will not cover this in detail, but here a far more complex example of a employ
 
 The view, that also changes the scopes during iteration:
 
-  %h1
-    Capaciteits rapport
-    = @capacity_report.scope_name :time
-  %table.report
-    %thead
-      %th Maand
-      %th Uv
-      %th Uren
-      %th Werkelijk
-      %th Intern
-      %th Extern
-      %th %
+		%h1
+		  Capaciteits rapport
+		  = @capacity_report.scope_name :time
+		%table.report
+		  %thead
+		    %th Maand
+		    %th Uv
+		    %th Uren
+		    %th Werkelijk
+		    %th Intern
+		    %th Extern
+		    %th %
 
-      %th Cum. Uv
-      %th Cum. Uren
-      %th Cum. Werkelijk
-      %th Cum. Intern
-      %th Cum. Extern
-      %th %
-    %tbody
-      - @capacity_report.iterate_time :time, :month do
-        - row = @capacity_report.get_row
-        %tr
-          %td= row[:period]
-          %td= row[:funerals]
-          %td= row[:funeral_time].round 2
-          %td= row[:total_hours].round 2
-          %td= row[:internal_hours].round 2
-          %td= row[:external_hours].round 2
-          %td= row[:capacity].as_percentage
+		    %th Cum. Uv
+		    %th Cum. Uren
+		    %th Cum. Werkelijk
+		    %th Cum. Intern
+		    %th Cum. Extern
+		    %th %
+		  %tbody
+		    - @capacity_report.iterate_time :time, :month do
+		      - row = @capacity_report.get_row
+		      %tr
+		        %td= row[:period]
+		        %td= row[:funerals]
+		        %td= row[:funeral_time].round 2
+		        %td= row[:total_hours].round 2
+		        %td= row[:internal_hours].round 2
+		        %td= row[:external_hours].round 2
+		        %td= row[:capacity].as_percentage
 
-          - cum_row = @capacity_report.get_row :time => :year_cumulative
-          %td= cum_row[:funerals]
-          %td= cum_row[:funeral_time].round 2
-          %td= cum_row[:total_hours].round 2
-          %td= cum_row[:internal_hours].round 2
-          %td= cum_row[:external_hours].round 2
-          %td= cum_row[:capacity].as_percentage
+		        - cum_row = @capacity_report.get_row :time => :year_cumulative
+		        %td= cum_row[:funerals]
+		        %td= cum_row[:funeral_time].round 2
+		        %td= cum_row[:total_hours].round 2
+		        %td= cum_row[:internal_hours].round 2
+		        %td= cum_row[:external_hours].round 2
+		        %td= cum_row[:capacity].as_percentage
 
