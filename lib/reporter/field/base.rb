@@ -1,8 +1,7 @@
 class Reporter::Field::Base
 
-	def initialize structure, alias_name, name
+	def initialize structure, alias_name
 		@structure = structure
-		@human_name = name
 		@name = alias_name
 	end
 
@@ -14,7 +13,7 @@ class Reporter::Field::Base
 		raise NotImplementedError
 	end
 
-	attr_reader :name, :human_name
+	attr_reader :name
 
 	protected
 	attr_reader :structure

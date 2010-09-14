@@ -1,5 +1,7 @@
 require "reporter/support/time_range"
 
+# DataSet is where all information about the data for the report comes together.
+#
 class Reporter::DataSet
 
 	def initialize *args

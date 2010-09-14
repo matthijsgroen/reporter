@@ -8,9 +8,9 @@ class Reporter::DataStructure
 
 	attr_reader :fields
 
-	def << column_type, column_alias, name, *args, &block
+	def << column_type, column_alias, *args, &block
 		klass = "reporter/field/#{column_type}".classify.constantize
-		column = klass.new self, column_alias, name, *args, &block
+		column = klass.new self, column_alias, *args, &block
 		#TODO: Validate column
 
 		@fields[column_alias] = column

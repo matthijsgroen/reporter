@@ -37,16 +37,16 @@ class Reporter::DataSource::ActiveRecordSource
 	def count *args
 		options = args.extract_options!.dup
 		scope_options = {}
-		scope_options[:remove_scopes] = [options.delete :remove_scope] if options[:remove_scope]
-		scope_options[:remove_scopes] = options.delete :remove_scopes if options[:remove_scopes]
+		scope_options[:ignore_scopes] = [options.delete :ignore_scope] if options[:ignore_scope]
+		scope_options[:ignore_scopes] = options.delete :ignore_scopes if options[:ignore_scopes]
 		source_with_applied_scopes(scope_options).count *(args + [options])
 	end
 
 	def sum *args
 		options = args.extract_options!.dup
 		scope_options = {}
-		scope_options[:remove_scopes] = [options.delete :remove_scope] if options[:remove_scope]
-		scope_options[:remove_scopes] = options.delete :remove_scopes if options[:remove_scopes]
+		scope_options[:ignore_scopes] = [options.delete :ignore_scope] if options[:ignore_scope]
+		scope_options[:ignore_scopes] = options.delete :ignore_scopes if options[:ignore_scopes]
 		source_with_applied_scopes(scope_options).sum *(args + [options])
 	end
 

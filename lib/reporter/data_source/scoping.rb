@@ -47,9 +47,9 @@ class Reporter::DataSource::Scoping
 	# internal
 
 	def apply_on source, options
-		removed_scopes = options[:remove_scopes] || []
+		ignored_scopes = options[:ignore_scopes] || []
 		@defined_scopes.each do |name, scope|
-			source = scope.apply_on(source) unless removed_scopes.include? name
+			source = scope.apply_on(source) unless ignored_scopes.include? name
 		end
 		source
 	end
