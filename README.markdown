@@ -75,8 +75,7 @@ This code is for the view (HAML example)
 			%th National sales
 			%th National marktetshare
 		%tbody
-			- @market_share_report.iterate_time :time, :month, :quarter, :year do
-				- row = @market_share_report.get_row
+			- @market_share_report.iterate_time :time, :month, :quarter, :year do |row|
 				%tr
 					%td= row[:period] # The query will fire at this point. so caching makes huge profit!
 					%td= row[:funerals]
@@ -184,7 +183,7 @@ Scope name will print a human readable name for the currently active scope. In t
 			%th National sales
 			%th National marktetshare
 		%tbody
-			- @market_share_report.iterate_time :time, :month, :quarter, :year do
+			- @market_share_report.iterate_time :time, :month, :quarter, :year do |row|
 
 Iteration
 ---------
@@ -207,10 +206,6 @@ the outsides of the series must always have the biggest value of the set.
 valid: [:year(5), :month(3), :quarter(4)] == :year(pre) => :quarter(post) => :month(nil)
 valid: [:year(5), :month(3), :week(2), :quarter(4)] == :year(pre) => :quarter(post) => :month(pre) => :week(nil)
 invalid: [:year(5), :month(3), :quarter(4), :week(2)] The childs of year (biggest in initial set) are: [:month(3), :quarter(4), :week(2)] The larges value is not the first or last item, so this set is invalid.
-
-				- row = @market_share_report.get_row
-
-get_row retrieves a value container from the report, storing the active scopes. the current scopes are just applied right before data retrieval, if there is no cache available.
 
 				%tr
 					%td= row[:period] # The query will fire at this point. so caching makes huge profit!
@@ -295,8 +290,7 @@ The view, that also changes the scopes during iteration:
 		    %th Cum. Extern
 		    %th %
 		  %tbody
-		    - @capacity_report.iterate_time :time, :month do
-		      - row = @capacity_report.get_row
+		    - @capacity_report.iterate_time :time, :month do |row|
 		      %tr
 		        %td= row[:period]
 		        %td= row[:funerals]
