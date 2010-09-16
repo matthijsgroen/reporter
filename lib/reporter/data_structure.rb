@@ -1,9 +1,8 @@
 class Reporter::DataStructure
 
-	def initialize data_set, *args, &block
+	def initialize data_set, *args
 		@data_set = data_set
 		@fields = {}
-		yield(self)
 	end
 
 	attr_reader :fields
@@ -19,7 +18,7 @@ class Reporter::DataStructure
 	alias :add :<<
 
 	def field_value_of field, options
-		raise "No such field defined" unless @fields.has_key? field
+		raise "No such field defined: #{field}" unless @fields.has_key? field
 		@fields[field].calculate_value(data_set.data_source, options)
 	end
 

@@ -8,9 +8,9 @@ class Reporter::Field::Field < Reporter::Field::Base
 	end
 
 	def calculate_value data_source, calculation_options
-		if @calculation_block
+		if calculation_block
 			row = Reporter::Value.new(name, options[:name], nil, nil, options[:description], options[:source_link])
-			@calculation_block.call(data_source, options, row)
+			calculation_block.call(data_source, options, row)
 			return row
 		end
 		return Reporter::Value.new(name, options[:name], value, nil, options[:description], options[:source_link]) unless value.is_a? Symbol
@@ -20,6 +20,6 @@ class Reporter::Field::Field < Reporter::Field::Base
 
 	private
 
-	attr_reader :options, :value
+	attr_reader :options, :value, :calculation_block
 
 end

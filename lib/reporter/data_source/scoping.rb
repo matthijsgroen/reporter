@@ -1,14 +1,15 @@
 class Reporter::DataSource::Scoping
 
 	SUPPORTED_SCOPES = {
-		:date => Reporter::Scope::DateScope,
-		:reference => Reporter::Scope::ReferenceScope
+					:date => Reporter::Scope::DateScope,
+					:reference => Reporter::Scope::ReferenceScope
 	}
 
 	def initialize data_source
 		@data_source = data_source
 		@defined_scopes = {}
 		@scope_serialization = {}
+		@scope_hash = nil
 	end
 
 	public
@@ -26,6 +27,7 @@ class Reporter::DataSource::Scoping
 		#Rails.logger.info "Added scope #{name}: #{scope_type}"
 		self
 	end
+
 	alias :add :<<
 
 	def limit_scope scope, *args
@@ -48,10 +50,20 @@ class Reporter::DataSource::Scoping
 
 	def apply_on source, options
 		ignored_scopes = options[:ignore_scopes] || []
+		c = @cached_scopes[source][ignored_scopes.hash][@scope_hash]
+		raise "create" if c.nil?
+#		Rails.logger.info "cache!"
+		c
+	rescue
+#		Rails.logger.info "scope creation!"
+		c_source = source
+		@cached_scopes ||= {}
+		@cached_scopes[c_source] ||= {}
+		@cached_scopes[c_source][ignored_scopes.hash] ||= {}
 		@defined_scopes.each do |name, scope|
 			source = scope.apply_on(source) unless ignored_scopes.include? name
 		end
-		source
+		@cached_scopes[c_source][ignored_scopes.hash][@scope_hash] = source
 	end
 
 	def normalize_mapping mapping
@@ -59,8 +71,16 @@ class Reporter::DataSource::Scoping
 		mapping.each do |key, value|
 			key_s = key.to_s
 			source = data_source.sources.find { |source| source.model_name.underscore == key_s.underscore }
-			value_s = value.to_s
-			normalized[source.model_name] = value_s
+			normalized_value = \
+				case value
+					when Array :
+					 value.collect(&:to_s)
+					when Hash :
+					 value
+					else
+					 value.to_s
+				end
+			normalized[source.model_name] = normalized_value
 		end
 		normalized.freeze
 	end
@@ -99,10 +119,12 @@ class Reporter::DataSource::Scoping
 
 	def apply_scope scope_serialization
 		@scope_serialization = scope_serialization
+		@scope_hash = scope_serialization.hash
 	end
 
 	def serialize_scope(scope_name, value)
 		scope_serialization[scope_name] = value
+		@scope_hash = scope_serialization.hash
 	end
 
 	def unserialize_scope(scope_name)
@@ -124,6 +146,5 @@ class Reporter::DataSource::Scoping
 	private
 
 	attr_reader :data_source, :scope_serialization
-
 
 end

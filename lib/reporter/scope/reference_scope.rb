@@ -36,23 +36,24 @@ class Reporter::Scope::ReferenceScope < Reporter::Scope::Base
 
 		limiter = group_object || @limiter
 		if limiter
-			limit_through_association source, reference, limiter
+			q, values = limit_through_association source, reference, limiter
+			source.where(q, values)
 		else
 			source
 		end
 	end
 
-	def iterate items, &block
+	def iterate items, data_set, &block
 		items ||= @limiter
 		if items.is_a? Enumerable
 			items.each do |item|
 				scoping.serialize_scope name, item
-				yield
+				yield data_set.get_row
 			end
 			scoping.serialize_scope name, nil
 		else
 			scoping.serialize_scope name, items
-			yield
+			yield data_set.get_row
 			scoping.serialize_scope name, nil
 		end
 	end
@@ -84,11 +85,20 @@ class Reporter::Scope::ReferenceScope < Reporter::Scope::Base
 	private
 
 	def limit_through_association source, reference, limiter
+		if reference.is_a? Array
+			query = [[], {}]
+			reference.each do |ref|
+				q, values = limit_through_association source, ref, limiter
+				query[0] << q
+				query[1].merge! values
+			end
+			return "(#{query[0].join ") OR ("})", query[1]
+		end
 		association = source.reflect_on_association(reference.to_sym)
 		if association.macro == :belongs_to
-			id_collection = get_ids_from limiter, reference
+			id_collection = get_ids_from limiter, reference, association
 			#Rails.logger.info "Belongs to association #{reference} limited by #{limiter}: #{id_collection.inspect}"
-			source.where("#{reference}_id".to_sym => id_collection)
+			return "#{reference}_id IN(:#{reference}_ids)", { "#{reference}_ids".to_sym => id_collection }
 		elsif association.macro == :has_one and association.options[:through]
 			#Rails.logger.info "Has one through association #{reference} limited by #{limiter}"
 			through_association = association.options[:through]
@@ -96,11 +106,12 @@ class Reporter::Scope::ReferenceScope < Reporter::Scope::Base
 		end
 	end
 
-	def get_ids_from item, reference
+	def get_ids_from item, reference, association
 		return [] if item.nil?
-		return item.collect { |sub_item| get_ids_from sub_item, reference }.flatten if item.is_a? Enumerable
+		return item.collect { |sub_item| get_ids_from sub_item, reference, association }.flatten if item.is_a? Enumerable
 		if item.class.ancestors.include? ActiveRecord::Base
-			return [item.id] if item.class.name.underscore == reference
+
+			return [item.id] if item.class == association.klass
 			return item.send("#{reference.to_s}_ids".to_sym) if item.respond_to? "#{reference.to_s}_ids"
 			return [item.send("#{reference.to_s}_id".to_sym)] if item.respond_to? "#{reference.to_s}_id"
 		end
@@ -128,16 +139,15 @@ class Reporter::Scope::ReferenceScope < Reporter::Scope::Base
 			if columns.size == 1
 				mapping[key] = columns.first
 			else
-				specific = mapping_specifics[key]
-				if specific and columns.include? specific
-					mapping[key] = mapping_specifics[key]
-				else
-					raise "No available reference for datasource #{source.model_name}"
+				specifics = [mapping_specifics[key]].flatten
+				specifics.each do |specific|
+					raise "No available reference to satisfy one of these columns (#{columns.to_sentence}) for datasource #{source.model_name}" unless specific and columns.include? specific
 				end
+				mapping[key] = mapping_specifics[key]
 			end
 		end
 		#{ :funeral => "work_area", :cbs_statistic => "work_area" }
-		Rails.logger.info mapping
+		#Rails.logger.info mapping.inspect
 		mapping
 	end
 

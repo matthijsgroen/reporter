@@ -25,7 +25,7 @@ class Reporter::Scope::DateScope < Reporter::Scope::Base
 		scoping.serialize_scope name, period_as_range(period)
 	end
 
-	def apply_on source
+	def apply_on source, period = nil
 		raise "No mapped column for source #{source}" unless mappings.has_key? source.name
 		column = mappings[source.name]
 		# The time period range is inclusive in all aspects of the report to detemine correctly if it runs to the end of a year
@@ -35,13 +35,37 @@ class Reporter::Scope::DateScope < Reporter::Scope::Base
 		# in SQL, we need to use BETWEEN 1-1 00:00 AND 2-1 00:00
 		# when a date includes time, we need to add 1 second. If a date has no time, we need to include 1 day.
 
-		period = active_period.dup
+		period ||= active_period.dup
 		period = if period.end.is_a? Date
 			period.begin .. period.end.advance(:days => 1)
 	  else
 			period.begin .. period.end.advance(:seconds => 1)
 		end
-		source.where(column.to_sym => period)
+
+		case column
+			when String :
+				source.where(column.to_sym => period)
+  		when Hash : begin
+				column.each do |key, value|
+					source = source.joins(key).where(key => { value => period })
+				end
+				source
+			end
+		end
+	end
+
+	def group_on source, period_type
+		column = mappings[source.name]
+		case column
+			when String :
+				"#{period_type.to_s.upcase}(#{column})"
+			when Hash : begin
+				column.each do |key, value|
+					table_name = table_name_of_association source, key
+					return "#{period_type.to_s.upcase}(#{table_name}.#{value})"
+				end
+			end
+		end
 	end
 
 	def self.possible_scopes sources
@@ -76,6 +100,10 @@ class Reporter::Scope::DateScope < Reporter::Scope::Base
 			when :year_cumulative :
 				active_period.begin.beginning_of_year .. active_period.end
 		end
+	end
+
+	def table_name_of_association source, name
+		source.reflect_on_association(name.to_sym).klass.table_name
 	end
 
 end

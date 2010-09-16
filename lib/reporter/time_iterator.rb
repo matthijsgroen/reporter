@@ -45,10 +45,13 @@ module Reporter::TimeIterator
 	end
 
 	def iterate_date_tree scope, tree, time_frame, &block
-		iterate_time_periods time_frame, tree[:name] do |new_time_frame|
+		iterate_time_periods time_frame, tree[:name] do |new_time_frame, optimization|
 			iterate_date_tree scope, tree[:children], time_frame, &block if tree[:children_first] and tree[:children]
 			scope.change new_time_frame
-			yield
+			@time_iteration_row ||= Reporter::TimeOptimizedResultRow.new(self, nil, scope, time_frame)
+			@time_iteration_row.current_iteration = optimization
+			@time_iteration_row.scope = data_source.scopes.current_scope
+			yield @time_iteration_row
 			iterate_date_tree scope, tree[:children], time_frame, &block if !tree[:children_first] and tree[:children]
 		end
 	end
@@ -58,18 +61,22 @@ module Reporter::TimeIterator
 			yield period
 			return
 		end
-		advancement = case block_type
-			when :year : { :years => 1 }
-			when :quarter : { :months => 3 }
-			when :month : { :months => 1 }
-			when :week : { :weeks => 1 }
-			when :day : { :days => 1 }
+		advancement, filter = case block_type
+			when :year : [{ :years => 1 }, [:year]]
+			when :quarter : [{ :months => 3 }, [:quarter, :year]]
+			when :month : [{ :months => 1 }, [:month, :year]]
+			when :week : [{ :weeks => 1 }, [:week, :year]]
+			when :day : [{ :days => 1 }, [:day, :month, :year]]
 			else raise "Unsupported type: #{block_type}"
 		end
 		iterate_period = period.begin.send("beginning_of_#{block_type}".to_sym) .. period.begin.send("end_of_#{block_type}".to_sym)
+		optimization = { :type => block_type, :filter => filter, :period => {} }
 
 		while iterate_period.begin < period.end
-			yield iterate_period
+			optimization[:period] = {}
+			optimization[:filter].each { |field| optimization[:period][field] = iterate_period.begin.send(field) }
+
+			yield iterate_period, optimization
 			iterate_period = iterate_period.begin.advance(advancement).send("beginning_of_#{block_type}".to_sym) ..
 							iterate_period.end.advance(advancement).send("end_of_#{block_type}".to_sym)
 		end
