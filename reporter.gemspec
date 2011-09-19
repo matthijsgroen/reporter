@@ -22,7 +22,6 @@ Gem::Specification.new do |s|
     "README.markdown",
     "Rakefile",
     "VERSION",
-    "lib/.gitignore",
     "lib/reporter/data_set.rb",
     "lib/reporter/data_source.rb",
     "lib/reporter/data_source/active_record_source.rb",
@@ -55,24 +54,24 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<arel>, ["~> 1.0.1"])
-      s.add_runtime_dependency(%q<activerecord>, ["~> 3.0.0"])
-      s.add_runtime_dependency(%q<activesupport>, ["~> 3.0.0"])
+      s.add_runtime_dependency(%q<arel>, [">= 1.0.1"])
+      s.add_runtime_dependency(%q<activerecord>, ["~> 3.0"])
+      s.add_runtime_dependency(%q<activesupport>, ["~> 3.0"])
       s.add_runtime_dependency(%q<activerecord>, ["~> 3.0.0"])
       s.add_runtime_dependency(%q<activesupport>, ["~> 3.0.0"])
       s.add_runtime_dependency(%q<arel>, ["~> 1.0.1"])
     else
-      s.add_dependency(%q<arel>, ["~> 1.0.1"])
-      s.add_dependency(%q<activerecord>, ["~> 3.0.0"])
-      s.add_dependency(%q<activesupport>, ["~> 3.0.0"])
+      s.add_dependency(%q<arel>, [">= 1.0.1"])
+      s.add_dependency(%q<activerecord>, ["~> 3.0"])
+      s.add_dependency(%q<activesupport>, ["~> 3.0"])
       s.add_dependency(%q<activerecord>, ["~> 3.0.0"])
       s.add_dependency(%q<activesupport>, ["~> 3.0.0"])
       s.add_dependency(%q<arel>, ["~> 1.0.1"])
     end
   else
-    s.add_dependency(%q<arel>, ["~> 1.0.1"])
-    s.add_dependency(%q<activerecord>, ["~> 3.0.0"])
-    s.add_dependency(%q<activesupport>, ["~> 3.0.0"])
+    s.add_dependency(%q<arel>, [">= 1.0.1"])
+    s.add_dependency(%q<activerecord>, ["~> 3.0"])
+    s.add_dependency(%q<activesupport>, ["~> 3.0"])
     s.add_dependency(%q<activerecord>, ["~> 3.0.0"])
     s.add_dependency(%q<activesupport>, ["~> 3.0.0"])
     s.add_dependency(%q<arel>, ["~> 1.0.1"])
